@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euxo pipefail
+set -x
 
 if [[ $(id -u) -ne 0 ]]; then
   echo "Please run as root"
