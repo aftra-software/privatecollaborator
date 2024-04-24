@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euxo pipefail
 
 if [[ $(id -u) -ne 0 ]]; then
   echo "Please run as root"
@@ -33,41 +34,10 @@ fi
 # Make sure that permissions are ok for all scripts.
 chmod +x *.sh
 
-
 SRC_PATH="`dirname \"$0\"`"
 
-# Get public IP in case not running on AWS, Azure or Digitalocean.
-MYPUBLICIP=$(curl http://checkip.amazonaws.com/ -s)
-MYPRIVATEIP=$(hostname -I | cut -d' ' -f 1) # It assumes that first network interface is the Internet one
-
-# Get IPs if running on AWS.
-curl http://169.254.169.254/latest -s --output /dev/null -f -m 1
-if [ 0 -eq $? ]; then
-  MYPRIVATEIP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4 -s)
-  MYPUBLICIP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4 -s)
-fi;
-
-# Get IPs if running on Azure.
-curl --header 'Metadata: true' "http://169.254.169.254/metadata/instance/network?api-version=2017-08-01" -s --output /dev/null -f -m 1
-if [ 0 -eq $? ]; then
-  MYPRIVATEIP=$(curl --header 'Metadata: true' "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/privateIpAddress?api-version=2017-08-01&format=text" -s)
-  MYPUBLICIP=$(curl --header 'Metadata: true' "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2017-08-01&format=text" -s)
-fi;
-
-# Get IPs if running on Digitalocean.
-curl http://169.254.169.254/metadata/v1/id -s --output /dev/null -f -m1
-if [ 0 -eq $? ]; then
-  # Use Floating IP if the VM has it enabled.
-  FLOATING=$(curl http://169.254.169.254/metadata/v1/floating_ip/ipv4/active -s)
-  if [ "$FLOATING" == "true" ]; then
-    MYPUBLICIP=$(curl http://169.254.169.254/metadata/v1/floating_ip/ipv4/ip_address -s)
-    MYPRIVATEIP=$(curl http://169.254.169.254/metadata/v1/interfaces/public/0/anchor_ipv4/address -s)
-  fi
-  if [ "$FLOATING" == "false" ]; then
-    MYPUBLICIP=$(curl http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address -s)
-    MYPRIVATEIP=$MYPUBLICIP
-  fi
-fi;
+MYPRIVATEIP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4 -s)
+MYPUBLICIP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4 -s)
 
 # Use snap version of Certbot because APT-version is too old.
 snap install --classic certbot
@@ -91,11 +61,6 @@ cd /usr/local/collaborator/
 chmod +x /usr/local/collaborator/*
 
 grep $MYPRIVATEIP /etc/hosts -q || (echo $MYPRIVATEIP `hostname` >> /etc/hosts)
-
-echo ""
-echo "CTRL-C if you don't need to obtain certificates."
-echo ""
-read -p "Press enter to continue"
 
 # Wildcard certificate is requested in two steps as it is less error-prone.
 # The first step requests the actual wildcard with *.domain.com (all subdomains) certificate.
