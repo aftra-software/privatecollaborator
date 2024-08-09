@@ -56,6 +56,7 @@ sed -i "s/BDOMAIN/$DOMAIN/g" /usr/local/collaborator/collaborator.config
 cp "$SRC_PATH/burpcollaborator.service" /etc/systemd/system/
 cp "$SRC_PATH/startcollab.sh" /usr/local/collaborator/
 cp "$SRC_PATH/renewcert.sh" /etc/cron.daily/renewcert
+cp "$SRC_PATH/restartcollaborator.sh" /etc/cron.weekly/restartcollaborator
 
 cd /usr/local/collaborator/
 chmod +x /usr/local/collaborator/*
