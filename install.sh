@@ -36,8 +36,9 @@ chmod +x *.sh
 
 SRC_PATH="`dirname \"$0\"`"
 
-MYPRIVATEIP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4 -s)
-MYPUBLICIP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4 -s)
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+MYPRIVATEIP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4 -s)
+MYPUBLICIP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4 -s)
 
 # Use snap version of Certbot because APT-version is too old.
 snap install --classic certbot
